@@ -5,7 +5,10 @@ import com.thoughtworks.xstream.XStream;
 import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 
 import java.io.*;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Main {
@@ -59,19 +62,29 @@ public class Main {
         execCmd(dependencyExtractorCommand);
     }
 
-    private static ArrayList<String> getTempXMLOutputPaths() throws NotImplementedException {
+    private static ArrayList<String> getTempXMLOutputPaths() {
+        String mainClassFolderPath = getMainClassFolderPath();
+        var tempXMLOutputFilenames = Arrays.asList(
+                "dependency_extractor_tempfile.xml",
+                "c2c_tempfile.xml"
+        );
+
         var tempXMLOutputPathsList = new ArrayList<String>();
-        if (OSGetter.isWindows()) {
-            tempXMLOutputPathsList.add("C:\\TCC\\tempfile.xml");
-            tempXMLOutputPathsList.add("C:\\TCC\\tempfile2.xml");
-        } else if (OSGetter.isUnix() || OSGetter.isMac()) {
-            tempXMLOutputPathsList.add("~/tempfile.xml");
-            tempXMLOutputPathsList.add("~/tempfile2.xml");
+        for (String tempXMLOutputFilename: tempXMLOutputFilenames) {
+            tempXMLOutputPathsList.add(Paths.get(mainClassFolderPath, tempXMLOutputFilename).toAbsolutePath().toString());
         }
-        else {
-            throw new NotImplementedException("Your Operational System is not supported yet");
-        }
+
         return tempXMLOutputPathsList;
+    }
+
+    private static String getMainClassFolderPath() {
+        File mainClassFile = null;
+        try {
+            mainClassFile = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+        return mainClassFile.getParentFile().getPath();
     }
 
     private static String getDependencyExtractorCommand(String XMLOutputPath, String inputDirectoryPath) throws NotImplementedException {
