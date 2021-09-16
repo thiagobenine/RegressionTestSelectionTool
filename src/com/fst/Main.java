@@ -142,7 +142,7 @@ public class Main {
 
     public static void execCmd(String cmd) {
         System.out.println();
-        System.out.println("CLI Command: " + cmd);
+        System.out.println("Running CLI Command: " + cmd);
         String errorResult = null;
         try (
                 InputStream inputStream = Runtime.getRuntime().exec(cmd).getErrorStream();
@@ -154,7 +154,9 @@ public class Main {
         }
 
         if (errorResult != null) {
-            throw new RuntimeException("Error when executing the following CLI command: " + cmd);
+            throw new RuntimeException(
+                    "Error when executing the CLI command" + "\n"
+                    + "Error: " + errorResult);
         }
     }
 }
