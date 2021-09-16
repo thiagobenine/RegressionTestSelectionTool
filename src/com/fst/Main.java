@@ -1,4 +1,6 @@
 package com.fst;
+import com.fst.utils.OSGetter;
+import com.fst.xmlfields.*;
 import com.thoughtworks.xstream.XStream;
 import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 

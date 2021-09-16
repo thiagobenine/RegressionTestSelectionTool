@@ -1,4 +1,4 @@
-package com.fst;
+package com.fst.utils;
 
 public class OSGetter {
 
