@@ -25,9 +25,10 @@ public class Main {
 
         runDependencyExtractor(inputDirectoryPath, tempXMLOutputPaths.get(0));
         runClassToClass(tempXMLOutputPaths);
+        var dependencies = getDependenciesFromXML(tempXMLOutputPaths.get(1));
         deleteFiles(tempXMLOutputPaths);
 
-        return getDependenciesFromXML(tempXMLOutputPaths.get(1));
+        return dependencies;
     }
 
     private static DependenciesField getDependenciesFromXML(String tempXMLOutputPath) {
