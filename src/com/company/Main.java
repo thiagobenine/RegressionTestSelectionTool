@@ -18,7 +18,6 @@ public class Main {
         dependencyExtractorCommand = getDependencyExtractorCommand(tempXMLOutputPaths.get(0), inputDirectoryPath);
         if (dependencyExtractorCommand == null) return; // maybe throw an exception instead of checking for null
 
-        System.out.println("Running DependencyExtractor..");
         var dependencyExtractorOutputError = execCmd(dependencyExtractorCommand);
 
         if (dependencyExtractorOutputError == null) {
@@ -35,7 +34,6 @@ public class Main {
         classToClassCommand = getClassToClassCommand(tempXMLOutputPaths.get(1), tempXMLOutputPaths.get(0));
         if (classToClassCommand == null) return; // maybe throw an exception instead of checking for null
 
-        System.out.println("Running c2c..");
         var classToClassOutputError = execCmd(classToClassCommand);
 
         if (classToClassOutputError == null) {
@@ -46,6 +44,7 @@ public class Main {
             System.out.println("Output: \n" + classToClassOutputError);
         }
 
+        deleteFiles(tempXMLOutputPaths);
     }
 
     private static ArrayList<String> getTempXMLOutputPaths(){
@@ -111,9 +110,17 @@ public class Main {
         return false;
     }
 
+    private static void deleteFiles(ArrayList<String> filePaths) {
+        for (String filePath : filePaths) {
+            File tempFile = new File(filePath);
+            tempFile.delete();
+        }
+    }
+
 
     public static String execCmd(String cmd) {
-        System.out.println("CLI Command: " + cmd + "\n");
+        System.out.println();
+        System.out.println("CLI Command: " + cmd);
         String result = null;
         try (
                 InputStream inputStream = Runtime.getRuntime().exec(cmd).getErrorStream();
