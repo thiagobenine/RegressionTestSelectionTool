@@ -1,50 +1,34 @@
 package com.fst;
 import com.thoughtworks.xstream.XStream;
+import jdk.jshell.spi.ExecutionControl.NotImplementedException;
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
 
-    public static void main(String[] args)  {
+    public static void main(String[] args) throws NotImplementedException {
         var inputDirectoryPath =  args[0];
         System.out.println("Input directory path: " + inputDirectoryPath);
 
+        var classDependencies = getClassDependencies(inputDirectoryPath);
+
+        System.out.println();
+    }
+
+    private static DependenciesField getClassDependencies(String inputDirectoryPath) throws NotImplementedException {
         ArrayList<String> tempXMLOutputPaths;
         tempXMLOutputPaths = getTempXMLOutputPaths();
-        if (tempXMLOutputPaths == null || tempXMLOutputPaths.isEmpty()) return; // maybe throw an exception instead of checking for null
 
-        String dependencyExtractorCommand;
-        dependencyExtractorCommand = getDependencyExtractorCommand(tempXMLOutputPaths.get(0), inputDirectoryPath);
-        if (dependencyExtractorCommand == null) return; // maybe throw an exception instead of checking for null
+        runDependencyExtractor(inputDirectoryPath, tempXMLOutputPaths.get(0));
+        runClassToClass(tempXMLOutputPaths);
+        deleteFiles(tempXMLOutputPaths);
 
-        var dependencyExtractorOutputError = execCmd(dependencyExtractorCommand);
+        return getDependenciesFromXML(tempXMLOutputPaths.get(1));
+    }
 
-        if (dependencyExtractorOutputError == null) {
-            System.out.println("DependencyExtractor ran without errors");
-
-        } else {
-            System.out.println("Error when executing DependencyExtractor");
-            System.out.println("Output: \n" + dependencyExtractorOutputError);
-            System.out.println("Exiting..");
-            return;
-        }
-
-        String classToClassCommand;
-        classToClassCommand = getClassToClassCommand(tempXMLOutputPaths.get(1), tempXMLOutputPaths.get(0));
-        if (classToClassCommand == null) return; // maybe throw an exception instead of checking for null
-
-        var classToClassOutputError = execCmd(classToClassCommand);
-
-        if (classToClassOutputError == null) {
-            System.out.println("c2c ran without errors");
-
-        } else {
-            System.out.println("Error when executing c2c");
-            System.out.println("Output: \n" + classToClassOutputError);
-        }
-
-        var XMLFile = new File(tempXMLOutputPaths.get(1));
+    private static DependenciesField getDependenciesFromXML(String tempXMLOutputPath) {
         var xStream = new XStream();
         xStream.allowTypesByWildcard(new String[] {
                 "com.fst.**",
@@ -55,13 +39,24 @@ public class Main {
         xStream.processAnnotations(InboundField.class);
         xStream.processAnnotations(OutboundField.class);
 
-        var dependencies = (DependenciesField) xStream.fromXML(XMLFile);
+        var XMLFile = new File(tempXMLOutputPath);
 
-        System.out.println();
-        deleteFiles(tempXMLOutputPaths);
+        return (DependenciesField) xStream.fromXML(XMLFile);
     }
 
-    private static ArrayList<String> getTempXMLOutputPaths(){
+    private static void runClassToClass(ArrayList<String> tempXMLOutputPaths) throws NotImplementedException {
+        String classToClassCommand;
+        classToClassCommand = getClassToClassCommand(tempXMLOutputPaths.get(1), tempXMLOutputPaths.get(0));
+        execCmd(classToClassCommand);
+    }
+
+    private static void runDependencyExtractor(String inputDirectoryPath, String tempXMLOutputPath) throws NotImplementedException {
+        String dependencyExtractorCommand;
+        dependencyExtractorCommand = getDependencyExtractorCommand(tempXMLOutputPath, inputDirectoryPath);
+        execCmd(dependencyExtractorCommand);
+    }
+
+    private static ArrayList<String> getTempXMLOutputPaths() throws NotImplementedException {
         var tempXMLOutputPathsList = new ArrayList<String>();
         if (OSGetter.isWindows()) {
             tempXMLOutputPathsList.add("C:\\TCC\\tempfile.xml");
@@ -71,13 +66,12 @@ public class Main {
             tempXMLOutputPathsList.add("~/tempfile2.xml");
         }
         else {
-            System.out.println("Operational System not supported. Exiting.");
-            return null;
+            throw new NotImplementedException("Your Operational System is not supported yet");
         }
         return tempXMLOutputPathsList;
     }
 
-    private static String getDependencyExtractorCommand(String XMLOutputPath, String inputDirectoryPath) {
+    private static String getDependencyExtractorCommand(String XMLOutputPath, String inputDirectoryPath) throws NotImplementedException {
         String CLICommand;
         if (OSGetter.isWindows()) {
             CLICommand = "cmd.exe /c DependencyExtractor -xml -out " + XMLOutputPath + " " + inputDirectoryPath;
@@ -85,13 +79,12 @@ public class Main {
             CLICommand = "DependencyExtractor -xml -out " + XMLOutputPath + " " + inputDirectoryPath;
         }
         else {
-            System.out.println("Operational System not supported. Exiting.");
-            return null;
+            throw new NotImplementedException("Your Operational System is not supported yet");
         }
         return CLICommand;
     }
 
-    private static String getClassToClassCommand(String XMLOutputPath, String XMLInputPath) {
+    private static String getClassToClassCommand(String XMLOutputPath, String XMLInputPath) throws NotImplementedException {
         String CLICommand;
         if (OSGetter.isWindows()) {
             CLICommand = "cmd.exe /c c2c " + XMLInputPath + " -xml -out " + XMLOutputPath;
@@ -99,8 +92,7 @@ public class Main {
             CLICommand = "c2c " + XMLInputPath + " -xml -out " + XMLOutputPath;
         }
         else {
-            System.out.println("Operational System not supported. Exiting.");
-            return null;
+            throw new NotImplementedException("Your Operational System is not supported yet");
         }
         return CLICommand;
     }
@@ -132,18 +124,21 @@ public class Main {
     }
 
 
-    public static String execCmd(String cmd) {
+    public static void execCmd(String cmd) {
         System.out.println();
         System.out.println("CLI Command: " + cmd);
-        String result = null;
+        String errorResult = null;
         try (
                 InputStream inputStream = Runtime.getRuntime().exec(cmd).getErrorStream();
                 Scanner s = new Scanner(inputStream).useDelimiter("\\A")
         ) {
-            result = s.hasNext() ? s.next() : null;
+            errorResult = s.hasNext() ? s.next() : null;
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return result;
+
+        if (errorResult != null) {
+            throw new RuntimeException("Error when executing the following CLI command: " + cmd);
+        }
     }
 }
