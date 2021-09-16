@@ -1,4 +1,4 @@
-package com.company;
+package com.fst;
 
 public class OSGetter {
 

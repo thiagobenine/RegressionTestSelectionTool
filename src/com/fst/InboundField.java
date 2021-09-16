@@ -1,12 +1,12 @@
-package com.company;
+package com.fst;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
 import com.thoughtworks.xstream.annotations.XStreamConverter;
 import com.thoughtworks.xstream.converters.extended.ToAttributedValueConverter;
 
-@XStreamAlias("outbound")
+@XStreamAlias("inbound")
 @XStreamConverter(value= ToAttributedValueConverter.class, strings={"text"})
-public class OutboundField {
+public class InboundField {
     @XStreamAsAttribute
     public String type;
 

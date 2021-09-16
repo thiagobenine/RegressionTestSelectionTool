@@ -1,4 +1,4 @@
-package com.company;
+package com.fst;
 import com.thoughtworks.xstream.XStream;
 import java.io.*;
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public class Main {
         var XMLFile = new File(tempXMLOutputPaths.get(1));
         var xStream = new XStream();
         xStream.allowTypesByWildcard(new String[] {
-                "com.company.**",
+                "com.fst.**",
         });
         xStream.processAnnotations(DependenciesField.class);
         xStream.processAnnotations(PackageField.class);

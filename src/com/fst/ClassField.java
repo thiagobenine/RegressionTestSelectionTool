@@ -1,17 +1,21 @@
-package com.company;
+package com.fst;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;
 import java.util.ArrayList;
 
-@XStreamAlias("package")
-public class PackageField {
+@XStreamAlias("class")
+public class ClassField {
     @XStreamAsAttribute
     public String confirmed;
 
     public String name;
 
     @XStreamImplicit
-    @XStreamAlias("class")
-    public ArrayList<ClassField> classes = new ArrayList<>();
+    @XStreamAlias("inbound")
+    public ArrayList<InboundField> inbounds = new ArrayList<>();
+
+    @XStreamImplicit
+    @XStreamAlias("outbound")
+    public ArrayList<OutboundField> outbounds = new ArrayList<>();
 }
