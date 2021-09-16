@@ -1,5 +1,5 @@
 package com.company;
-
+import com.thoughtworks.xstream.XStream;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Scanner;
@@ -44,6 +44,20 @@ public class Main {
             System.out.println("Output: \n" + classToClassOutputError);
         }
 
+        var XMLFile = new File(tempXMLOutputPaths.get(1));
+        var xStream = new XStream();
+        xStream.allowTypesByWildcard(new String[] {
+                "com.company.**",
+        });
+        xStream.processAnnotations(DependenciesField.class);
+        xStream.processAnnotations(PackageField.class);
+        xStream.processAnnotations(ClassField.class);
+        xStream.processAnnotations(InboundField.class);
+        xStream.processAnnotations(OutboundField.class);
+
+        var dependencies = (DependenciesField) xStream.fromXML(XMLFile);
+
+        System.out.println();
         deleteFiles(tempXMLOutputPaths);
     }
 
