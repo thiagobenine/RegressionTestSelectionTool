@@ -129,25 +129,6 @@ public class Main {
         return CLICommand;
     }
 
-    private static boolean isOutputInvalid(String XMLOutputPath) {
-        File tempFile = new File(XMLOutputPath);
-        boolean outputExists = tempFile.exists();
-        if (outputExists) {
-            System.out.println("Output file already exists");
-            return true;
-        } else {
-            try {
-                tempFile.createNewFile();
-            } catch (IOException e) {
-                System.out.println("Invalid path: " + XMLOutputPath);
-                e.printStackTrace();
-                return true;
-            }
-            tempFile.delete();
-        }
-        return false;
-    }
-
     private static void deleteFiles(ArrayList<String> filePaths) {
         for (String filePath : filePaths) {
             File tempFile = new File(filePath);
