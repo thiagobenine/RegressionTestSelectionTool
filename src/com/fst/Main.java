@@ -13,20 +13,36 @@ import java.util.Scanner;
 
 public class Main {
 
+    private static String dependencyFinderHomePath = null;
+    private static String inputDirectoryPath;
+
     public static void main(String[] args) throws NotImplementedException {
-        var inputDirectoryPath =  args[0];
+        inputDirectoryPath = args[0];
+        tryToGetDependencyFinderHomePath(args[1]);
+
         System.out.println("Input directory path: " + inputDirectoryPath);
 
-        var classDependencies = getClassDependencies(inputDirectoryPath);
+        var classDependencies = getClassDependencies();
 
         System.out.println();
     }
 
-    private static DependenciesField getClassDependencies(String inputDirectoryPath) throws NotImplementedException {
+    private static void tryToGetDependencyFinderHomePath(String arg) {
+        if (OSGetter.isUnix() || OSGetter.isMac()){
+            if (arg == null) {
+                throw new NullPointerException("2nd program argument must be DependencyFinder's home absolute path");
+            }
+            else {
+                dependencyFinderHomePath = arg;
+            }
+        }
+    }
+
+    private static DependenciesField getClassDependencies() throws NotImplementedException {
         ArrayList<String> tempXMLOutputPaths;
         tempXMLOutputPaths = getTempXMLOutputPaths();
 
-        runDependencyExtractor(inputDirectoryPath, tempXMLOutputPaths.get(0));
+        runDependencyExtractor(tempXMLOutputPaths.get(0));
         runClassToClass(tempXMLOutputPaths);
         var dependencies = getDependenciesFromXML(tempXMLOutputPaths.get(1));
         deleteFiles(tempXMLOutputPaths);
@@ -56,9 +72,9 @@ public class Main {
         execCmd(classToClassCommand);
     }
 
-    private static void runDependencyExtractor(String inputDirectoryPath, String tempXMLOutputPath) throws NotImplementedException {
+    private static void runDependencyExtractor(String tempXMLOutputPath) throws NotImplementedException {
         String dependencyExtractorCommand;
-        dependencyExtractorCommand = getDependencyExtractorCommand(tempXMLOutputPath, inputDirectoryPath);
+        dependencyExtractorCommand = getDependencyExtractorCommand(tempXMLOutputPath);
         execCmd(dependencyExtractorCommand);
     }
 
@@ -87,12 +103,12 @@ public class Main {
         return mainClassFile.getParentFile().getPath();
     }
 
-    private static String getDependencyExtractorCommand(String XMLOutputPath, String inputDirectoryPath) throws NotImplementedException {
+    private static String getDependencyExtractorCommand(String XMLOutputPath) throws NotImplementedException {
         String CLICommand;
         if (OSGetter.isWindows()) {
             CLICommand = "cmd.exe /c DependencyExtractor -xml -out " + XMLOutputPath + " " + inputDirectoryPath;
         } else if (OSGetter.isUnix() || OSGetter.isMac()) {
-            CLICommand = "DependencyExtractor -xml -out " + XMLOutputPath + " " + inputDirectoryPath;
+            CLICommand = dependencyFinderHomePath + "/bin/DependencyExtractor -xml -out " + XMLOutputPath + " " + inputDirectoryPath;
         }
         else {
             throw new NotImplementedException("Your Operational System is not supported yet");
@@ -105,7 +121,7 @@ public class Main {
         if (OSGetter.isWindows()) {
             CLICommand = "cmd.exe /c c2c " + XMLInputPath + " -xml -out " + XMLOutputPath;
         } else if (OSGetter.isUnix() || OSGetter.isMac()) {
-            CLICommand = "c2c " + XMLInputPath + " -xml -out " + XMLOutputPath;
+            CLICommand = dependencyFinderHomePath + "/bin/c2c " + XMLInputPath + " -xml -out " + XMLOutputPath;
         }
         else {
             throw new NotImplementedException("Your Operational System is not supported yet");
