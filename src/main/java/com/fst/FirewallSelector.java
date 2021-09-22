@@ -13,25 +13,42 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class Main {
-
-    private static String dependencyFinderHomePath = null;
-    private static String initialProjectVersionDirectoryPath;
-    private static String modifiedProjectVersionDirectoryPath;
-    private static final List<String> tempXMLOutputFilenames = Arrays.asList(
+public class FirewallSelector {
+    private String dependencyFinderHomePath = null;
+    private final String initialProjectVersionDirectoryPath;
+    private final String modifiedProjectVersionDirectoryPath;
+    private  final List<String> tempXMLOutputFilenames = Arrays.asList(
             "dependency_extractor_tempfile.xml",
             "c2c_tempfile.xml",
             "jarjardiff_tempfile.xml"
     );
-    private static ArrayList<String> tempXMLOutputPaths = new ArrayList<>();
+    private  ArrayList<String> tempXMLOutputPaths = new ArrayList<>();
 
-    private static Set<String> modifiedAndNewClassInbounds = new HashSet<>();
-    private static DependenciesField classDependencies;
-    private static DifferencesField classDifferences;
+    private final Set<String> modifiedAndNewClassInbounds = new HashSet<>();
+    private  DependenciesField classDependencies;
+    private  DifferencesField classDifferences;
 
-    public static void main(String[] args) throws NotImplementedException {
-        setProjectDirectoriesPaths(args);
-        tryToGetDependencyFinderHomePath(args[2]);
+    public  void main(String[] args) {}
+
+    public FirewallSelector(
+            String initialProjectVersionDirectoryPath,
+            String modifiedProjectVersionDirectoryPath
+    ) {
+        this.initialProjectVersionDirectoryPath = initialProjectVersionDirectoryPath;
+        this.modifiedProjectVersionDirectoryPath = modifiedProjectVersionDirectoryPath;
+    }
+
+    public FirewallSelector(
+            String initialProjectVersionDirectoryPath,
+            String modifiedProjectVersionDirectoryPath,
+            String dependencyFinderHomePath
+    ) {
+        this(initialProjectVersionDirectoryPath, modifiedProjectVersionDirectoryPath);
+        this.dependencyFinderHomePath = dependencyFinderHomePath;
+    }
+
+    public List<String> getSelectedClasses() throws NotImplementedException {
+        checkDependencyFinderHomePathRequirement();
 
         setTempXMLOutputPaths();
 
@@ -41,20 +58,20 @@ public class Main {
 
         setClassesInbounds();
 
-        var testCasesToExecute =
+        var selectedClasses =
                 modifiedAndNewClassInbounds.stream()
-                .filter(modifiedClassInbound -> modifiedClassInbound.endsWith("Test"))
-                .toList();
+                        .filter(modifiedClassInbound -> modifiedClassInbound.endsWith("Test"))
+                        .toList();
 
-        System.out.println();
+        return selectedClasses;
     }
 
-    private static void setClassesInbounds() {
+    private void setClassesInbounds() {
         getModifiedClassesInbounds();
         getNewClassesInbounds();
     }
 
-    private static void getModifiedClassesInbounds() {
+    private void getModifiedClassesInbounds() {
         if (classDifferences.modifiedClassesField != null && classDifferences.modifiedClassesField.classes != null) {
             classDifferences.modifiedClassesField.classes
                     .stream()
@@ -66,7 +83,7 @@ public class Main {
         }
     }
 
-    private static void getNewClassesInbounds() {
+    private void getNewClassesInbounds() {
         if (classDifferences.newClassesField != null && classDifferences.newClassesField.names != null) {
             classDifferences.newClassesField.names.forEach(newClassName -> {
                 modifiedAndNewClassInbounds.add(newClassName);
@@ -75,12 +92,12 @@ public class Main {
         }
     }
 
-    private static void setClassesDifferences() throws NotImplementedException {
+    private void setClassesDifferences() throws NotImplementedException {
         runJarJarDiff();
         getDifferencesFromXML(tempXMLOutputPaths.get(2));
     }
 
-    private static void removeNotConfirmedClassDependencies() {
+    private void removeNotConfirmedClassDependencies() {
         if (classDependencies.packages != null) {
             classDependencies.packages.removeIf(packageField -> packageField.confirmed.equals("no"));
             classDependencies.packages.forEach(packageField -> {
@@ -93,14 +110,14 @@ public class Main {
         }
     }
 
-    private static void runJarJarDiff() throws NotImplementedException {
+    private void runJarJarDiff() throws NotImplementedException {
         String JarJarDiffCommand;
         JarJarDiffCommand = getJarJarDiffCommand();
         execCmd(JarJarDiffCommand);
         System.out.println();
     }
 
-    private static String getJarJarDiffCommand() throws NotImplementedException {
+    private String getJarJarDiffCommand() throws NotImplementedException {
         String CLICommand;
         if (OSGetter.isWindows()) {
             CLICommand = "cmd.exe /c JarJarDiff -code -out " + tempXMLOutputPaths.get(2)
@@ -117,7 +134,7 @@ public class Main {
         return CLICommand;
     }
 
-    private static void getDifferencesFromXML(String tempXMLOutputPath) {
+    private void getDifferencesFromXML(String tempXMLOutputPath) {
         var xStream = new XStream();
         xStream.ignoreUnknownElements();
         xStream.allowTypesByWildcard(new String[] {
@@ -133,7 +150,7 @@ public class Main {
         classDifferences = (DifferencesField) xStream.fromXML(XMLFile);
     }
 
-    private static void getClassInboundsForClass(String className) {
+    private void getClassInboundsForClass(String className) {
         classDependencies.packages
                 .stream()
                 .flatMap(packageField -> packageField.classes.stream())
@@ -151,23 +168,16 @@ public class Main {
         });
     }
 
-    private static void setProjectDirectoriesPaths(String[] args) {
-        initialProjectVersionDirectoryPath = args[0];
-        modifiedProjectVersionDirectoryPath = args[1];
-    }
-
-    private static void tryToGetDependencyFinderHomePath(String arg) {
+    private void checkDependencyFinderHomePathRequirement() {
         if (OSGetter.isUnix() || OSGetter.isMac()){
-            if (arg == null) {
-                throw new NullPointerException("3nd program argument must be DependencyFinder's home absolute path");
-            }
-            else {
-                dependencyFinderHomePath = arg;
+            if (dependencyFinderHomePath == null) {
+                throw new NullPointerException("You need to instantiate FirewallSelector() " +
+                        "with DependencyFinder's home absolute path");
             }
         }
     }
 
-    private static void setClassesDependencies() throws NotImplementedException {
+    private void setClassesDependencies() throws NotImplementedException {
         runDependencyExtractor();
         runClassToClass();
 
@@ -175,7 +185,7 @@ public class Main {
         removeNotConfirmedClassDependencies();
     }
 
-    private static void getDependenciesFromXML() {
+    private void getDependenciesFromXML() {
         var xStream = new XStream();
         xStream.ignoreUnknownElements();
         xStream.allowTypesByWildcard(new String[] {
@@ -192,17 +202,17 @@ public class Main {
         classDependencies = (DependenciesField) xStream.fromXML(XMLFile);
     }
 
-    private static void runClassToClass() throws NotImplementedException {
+    private void runClassToClass() throws NotImplementedException {
         var classToClassCommand = getClassToClassCommand();
         execCmd(classToClassCommand);
     }
 
-    private static void runDependencyExtractor() throws NotImplementedException {
+    private void runDependencyExtractor() throws NotImplementedException {
         var dependencyExtractorCommand = getDependencyExtractorCommand();
         execCmd(dependencyExtractorCommand);
     }
 
-    private static void setTempXMLOutputPaths() {
+    private void setTempXMLOutputPaths() {
         String mainClassFolderPath = getMainClassFolderPath();
 
         tempXMLOutputPaths = new ArrayList<>();
@@ -211,17 +221,17 @@ public class Main {
         }
     }
 
-    private static String getMainClassFolderPath() {
+    private String getMainClassFolderPath() {
         File mainClassFile = null;
         try {
-            mainClassFile = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+            mainClassFile = new File(FirewallSelector.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
         return mainClassFile.getParentFile().getPath();
     }
 
-    private static String getDependencyExtractorCommand() throws NotImplementedException {
+    private String getDependencyExtractorCommand() throws NotImplementedException {
         String CLICommand;
         if (OSGetter.isWindows()) {
             CLICommand = "cmd.exe /c DependencyExtractor -xml -out " + tempXMLOutputPaths.get(0) + " " + modifiedProjectVersionDirectoryPath;
@@ -234,7 +244,7 @@ public class Main {
         return CLICommand;
     }
 
-    private static String getClassToClassCommand() throws NotImplementedException {
+    private String getClassToClassCommand() throws NotImplementedException {
         String CLICommand;
         if (OSGetter.isWindows()) {
             CLICommand = "cmd.exe /c c2c " + tempXMLOutputPaths.get(0) + " -xml -out " + tempXMLOutputPaths.get(1);
@@ -247,7 +257,7 @@ public class Main {
         return CLICommand;
     }
 
-    private static void deleteTempFiles() {
+    private void deleteTempFiles() {
         for (String filePath : tempXMLOutputFilenames) {
             File tempFile = new File(filePath);
             tempFile.delete();
@@ -255,7 +265,7 @@ public class Main {
     }
 
 
-    public static void execCmd(String cmd) {
+    public void execCmd(String cmd) {
         System.out.println();
         System.out.println("Running CLI Command: " + cmd);
         String errorResult = null;
