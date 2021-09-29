@@ -18,15 +18,18 @@ public class FirewallSelector {
     private final String initialProjectVersionDirectoryPath;
     private final String modifiedProjectVersionDirectoryPath;
     private  final List<String> tempXMLOutputFilenames = Arrays.asList(
-            "dependency_extractor_tempfile.xml",
-            "c2c_tempfile.xml",
-            "jarjardiff_tempfile.xml"
+            "dependency_extractor_for_modified_version_tempfile.xml",
+            "c2c_for_modified_version_tempfile.xml",
+            "jarjardiff_tempfile.xml",
+            "dependency_extractor_for_initial_version_tempfile.xml",
+            "c2c_for_initial_version_tempfile.xml"
     );
     private  ArrayList<String> tempXMLOutputPaths = new ArrayList<>();
 
     private final Set<String> modifiedAndNewClassInbounds = new HashSet<>();
-    private  DependenciesField classDependencies;
+    private  DependenciesField modifiedVersionClassDependencies;
     private  DifferencesField classDifferences;
+    private DependenciesField initialVersionTestsClassDependencies;
 
     public  void main(String[] args) {}
 
@@ -52,21 +55,27 @@ public class FirewallSelector {
 
         setTempXMLOutputPaths();
 
-        setClassesDependencies();
-        setClassesDifferences();
+        setClassesDependenciesForModifiedVersion();
+        setClassesDependenciesForTestsFromInitialVersion();
+        setClassesDifferencesBetweenInitialAndModifiedVersion();
         deleteTempFiles();
 
-        setClassesInbounds();
+        setClassesInboundsFromDifferences();
 
-        var selectedClasses =
-                modifiedAndNewClassInbounds.stream()
-                        .filter(modifiedClassInbound -> modifiedClassInbound.endsWith("Test"))
-                        .toList();
+        List<String> selectedTestClasses = new ArrayList<>();
+        modifiedAndNewClassInbounds.forEach(modifiedAndNewClassInbound -> {
+                initialVersionTestsClassDependencies.packages.forEach(packageField -> {
+                    packageField.classes.forEach(classField -> {
+                        if (classField.name.equals(modifiedAndNewClassInbound))
+                            selectedTestClasses.add(modifiedAndNewClassInbound);
+                    });
+                });
+        });
 
-        return selectedClasses;
+        return selectedTestClasses;
     }
 
-    private void setClassesInbounds() {
+    private void setClassesInboundsFromDifferences() {
         getModifiedClassesInbounds();
         getNewClassesInbounds();
     }
@@ -92,15 +101,28 @@ public class FirewallSelector {
         }
     }
 
-    private void setClassesDifferences() throws NotImplementedException {
+    private void setClassesDifferencesBetweenInitialAndModifiedVersion() throws NotImplementedException {
         runJarJarDiff();
         getDifferencesFromXML(tempXMLOutputPaths.get(2));
     }
 
-    private void removeNotConfirmedClassDependencies() {
-        if (classDependencies.packages != null) {
-            classDependencies.packages.removeIf(packageField -> packageField.confirmed.equals("no"));
-            classDependencies.packages.forEach(packageField -> {
+    private void removeNotConfirmedClassDependenciesForModifiedVersion() {
+        if (modifiedVersionClassDependencies.packages != null) {
+            modifiedVersionClassDependencies.packages.removeIf(packageField -> packageField.confirmed.equals("no"));
+            modifiedVersionClassDependencies.packages.forEach(packageField -> {
+                packageField.classes.removeIf(classField -> classField.confirmed.equals("no"));
+                packageField.classes.forEach(classField -> {
+                    if (classField.inbounds != null) classField.inbounds.removeIf(inboundField -> inboundField.confirmed.equals("no"));
+                    if (classField.outbounds != null) classField.outbounds.removeIf(outboundField -> outboundField.confirmed.equals("no"));
+                });
+            });
+        }
+    }
+
+    private void removeNotConfirmedClassDependenciesForTestsFromInitialVersion() {
+        if (initialVersionTestsClassDependencies.packages != null) {
+            initialVersionTestsClassDependencies.packages.removeIf(packageField -> packageField.confirmed.equals("no"));
+            initialVersionTestsClassDependencies.packages.forEach(packageField -> {
                 packageField.classes.removeIf(classField -> classField.confirmed.equals("no"));
                 packageField.classes.forEach(classField -> {
                     if (classField.inbounds != null) classField.inbounds.removeIf(inboundField -> inboundField.confirmed.equals("no"));
@@ -151,7 +173,7 @@ public class FirewallSelector {
     }
 
     private void getClassInboundsForClass(String className) {
-        classDependencies.packages
+        modifiedVersionClassDependencies.packages
                 .stream()
                 .flatMap(packageField -> packageField.classes.stream())
                 .filter(classField -> classField.name.equals(className))
@@ -177,15 +199,16 @@ public class FirewallSelector {
         }
     }
 
-    private void setClassesDependencies() throws NotImplementedException {
-        runDependencyExtractor();
-        runClassToClass();
+    private void setClassesDependenciesForTestsFromInitialVersion() throws NotImplementedException {
+        runDependencyExtractorForInitialVersion();
+        runClassToClassForInitialVersion();
 
-        getDependenciesFromXML();
-        removeNotConfirmedClassDependencies();
+        getDependenciesForTestsFromInitialVersionFromXML();
+        removeNotConfirmedClassDependenciesForTestsFromInitialVersion();
     }
 
-    private void getDependenciesFromXML() {
+
+    private void getDependenciesForTestsFromInitialVersionFromXML() {
         var xStream = new XStream();
         xStream.ignoreUnknownElements();
         xStream.allowTypesByWildcard(new String[] {
@@ -199,16 +222,59 @@ public class FirewallSelector {
 
         var XMLFile = new File(tempXMLOutputPaths.get(1));
 
-        classDependencies = (DependenciesField) xStream.fromXML(XMLFile);
+        var initialVersionClassDependencies = (DependenciesField) xStream.fromXML(XMLFile);
+
+        if (initialVersionClassDependencies.packages != null) {
+            initialVersionClassDependencies.packages.forEach(packageField -> {
+                packageField.classes.removeIf(classField -> !classField.name.endsWith("Test"));
+            });
+        }
+
+        initialVersionTestsClassDependencies = initialVersionClassDependencies;
     }
 
-    private void runClassToClass() throws NotImplementedException {
-        var classToClassCommand = getClassToClassCommand();
+    private void runClassToClassForInitialVersion() throws NotImplementedException {
+        var classToClassCommand = getClassToClassCommandForInitialVersion();
         execCmd(classToClassCommand);
     }
 
-    private void runDependencyExtractor() throws NotImplementedException {
-        var dependencyExtractorCommand = getDependencyExtractorCommand();
+    private void runDependencyExtractorForInitialVersion() throws NotImplementedException {
+        var dependencyExtractorCommand = getDependencyExtractorCommandForInitialVersion();
+        execCmd(dependencyExtractorCommand);
+    }
+
+    private void setClassesDependenciesForModifiedVersion() throws NotImplementedException {
+        runDependencyExtractorForModifiedVersion();
+        runClassToClassForModifiedVersion();
+
+        getDependenciesForModifiedVersionFromXML();
+        removeNotConfirmedClassDependenciesForModifiedVersion();
+    }
+
+    private void getDependenciesForModifiedVersionFromXML() {
+        var xStream = new XStream();
+        xStream.ignoreUnknownElements();
+        xStream.allowTypesByWildcard(new String[] {
+                "com.fst.**",
+        });
+        xStream.processAnnotations(DependenciesField.class);
+        xStream.processAnnotations(PackageField.class);
+        xStream.processAnnotations(ClassField.class);
+        xStream.processAnnotations(InboundField.class);
+        xStream.processAnnotations(OutboundField.class);
+
+        var XMLFile = new File(tempXMLOutputPaths.get(1));
+
+        modifiedVersionClassDependencies = (DependenciesField) xStream.fromXML(XMLFile);
+    }
+
+    private void runClassToClassForModifiedVersion() throws NotImplementedException {
+        var classToClassCommand = getClassToClassCommandForModifiedVersion();
+        execCmd(classToClassCommand);
+    }
+
+    private void runDependencyExtractorForModifiedVersion() throws NotImplementedException {
+        var dependencyExtractorCommand = getDependencyExtractorCommandForModifiedVersion();
         execCmd(dependencyExtractorCommand);
     }
 
@@ -231,7 +297,20 @@ public class FirewallSelector {
         return mainClassFile.getParentFile().getPath();
     }
 
-    private String getDependencyExtractorCommand() throws NotImplementedException {
+    private String getDependencyExtractorCommandForInitialVersion() throws NotImplementedException {
+        String CLICommand;
+        if (OSGetter.isWindows()) {
+            CLICommand = "cmd.exe /c DependencyExtractor -xml -out " + tempXMLOutputPaths.get(3) + " " + initialProjectVersionDirectoryPath;
+        } else if (OSGetter.isUnix() || OSGetter.isMac()) {
+            CLICommand = dependencyFinderHomePath + "/bin/DependencyExtractor -xml -out " + tempXMLOutputPaths.get(3) + " " + initialProjectVersionDirectoryPath;
+        }
+        else {
+            throw new NotImplementedException("Your Operational System is not supported yet");
+        }
+        return CLICommand;
+    }
+
+    private String getDependencyExtractorCommandForModifiedVersion() throws NotImplementedException {
         String CLICommand;
         if (OSGetter.isWindows()) {
             CLICommand = "cmd.exe /c DependencyExtractor -xml -out " + tempXMLOutputPaths.get(0) + " " + modifiedProjectVersionDirectoryPath;
@@ -244,7 +323,20 @@ public class FirewallSelector {
         return CLICommand;
     }
 
-    private String getClassToClassCommand() throws NotImplementedException {
+    private String getClassToClassCommandForInitialVersion() throws NotImplementedException {
+        String CLICommand;
+        if (OSGetter.isWindows()) {
+            CLICommand = "cmd.exe /c c2c " + tempXMLOutputPaths.get(3) + " -xml -out " + tempXMLOutputPaths.get(4);
+        } else if (OSGetter.isUnix() || OSGetter.isMac()) {
+            CLICommand = dependencyFinderHomePath + "/bin/c2c " + tempXMLOutputPaths.get(3) + " -xml -out " + tempXMLOutputPaths.get(4);
+        }
+        else {
+            throw new NotImplementedException("Your Operational System is not supported yet");
+        }
+        return CLICommand;
+    }
+
+    private String getClassToClassCommandForModifiedVersion() throws NotImplementedException {
         String CLICommand;
         if (OSGetter.isWindows()) {
             CLICommand = "cmd.exe /c c2c " + tempXMLOutputPaths.get(0) + " -xml -out " + tempXMLOutputPaths.get(1);
