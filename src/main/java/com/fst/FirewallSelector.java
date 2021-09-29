@@ -184,6 +184,11 @@ public class FirewallSelector {
                                 return;
                             }
                             modifiedAndNewClassInbounds.add(inboundField.text);
+
+                            if (inboundField.text.endsWith("Test")) {
+                                return;
+                            }
+
                             getClassInboundsForClass(inboundField.text);
                         });
                     }
