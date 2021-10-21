@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/FirewallSelectionTool.iml" filepath="$PROJECT_DIR$/FirewallSelectionTool.iml" />
+      <module fileurl="file://$PROJECT_DIR$/TestSelectionTool.iml" filepath="$PROJECT_DIR$/TestSelectionTool.iml" />
     </modules>
   </component>
 </project>
