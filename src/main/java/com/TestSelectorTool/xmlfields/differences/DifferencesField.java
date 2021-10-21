@@ -1,6 +1,5 @@
-package com.fst.xmlfields.differences;
+package com.TestSelectorTool.xmlfields.differences;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
-import com.thoughtworks.xstream.annotations.XStreamImplicit;
 
 @XStreamAlias("differences")
 public class DifferencesField {

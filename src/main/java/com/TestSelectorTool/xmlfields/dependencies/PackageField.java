@@ -1,4 +1,4 @@
-package com.fst.xmlfields.dependencies;
+package com.TestSelectorTool.xmlfields.dependencies;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;

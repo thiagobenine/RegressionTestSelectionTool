@@ -29,7 +29,7 @@
                     <finalName>FST</finalName>
                     <archive>
                         <manifest>
-                            <mainClass>com.fst.FirewallSelector</mainClass>
+                            <mainClass>com.TestSelectorTool.Selector</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

@@ -1,4 +1,4 @@
-package com.fst.utils;
+package com.TestSelectorTool.utils;
 
 public enum SelectionTechniqueEnum {
     CLASS_FIREWALL,

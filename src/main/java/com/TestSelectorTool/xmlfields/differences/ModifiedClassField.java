@@ -1,4 +1,4 @@
-package com.fst.xmlfields.differences;
+package com.TestSelectorTool.xmlfields.differences;
 
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 

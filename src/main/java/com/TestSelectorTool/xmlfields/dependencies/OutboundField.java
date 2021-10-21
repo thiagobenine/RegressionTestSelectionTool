@@ -1,12 +1,12 @@
-package com.fst.xmlfields.dependencies;
+package com.TestSelectorTool.xmlfields.dependencies;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
 import com.thoughtworks.xstream.annotations.XStreamConverter;
 import com.thoughtworks.xstream.converters.extended.ToAttributedValueConverter;
 
-@XStreamAlias("inbound")
+@XStreamAlias("outbound")
 @XStreamConverter(value= ToAttributedValueConverter.class, strings={"text"})
-public class InboundField {
+public class OutboundField {
     @XStreamAsAttribute
     public String type;
 

@@ -1,11 +1,11 @@
-package com.fst;
-import com.fst.utils.OSGetter;
-import com.fst.utils.SelectionTechniqueEnum;
-import com.fst.xmlfields.dependencies.*;
-import com.fst.xmlfields.differences.DifferencesField;
-import com.fst.xmlfields.differences.ModifiedClassField;
-import com.fst.xmlfields.differences.ModifiedClassesField;
-import com.fst.xmlfields.differences.NewClassesField;
+package com.TestSelectorTool;
+import com.TestSelectorTool.utils.OSGetter;
+import com.TestSelectorTool.utils.SelectionTechniqueEnum;
+import com.TestSelectorTool.xmlfields.dependencies.*;
+import com.TestSelectorTool.xmlfields.differences.DifferencesField;
+import com.TestSelectorTool.xmlfields.differences.ModifiedClassField;
+import com.TestSelectorTool.xmlfields.differences.ModifiedClassesField;
+import com.TestSelectorTool.xmlfields.differences.NewClassesField;
 import com.thoughtworks.xstream.XStream;
 import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 
@@ -14,7 +14,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class FirewallSelector {
+public class Selector {
     private String dependencyFinderHomePath = null;
     private final String initialProjectVersionDirectoryPath;
     private final String modifiedProjectVersionDirectoryPath;
@@ -35,7 +35,7 @@ public class FirewallSelector {
 
     public  void main(String[] args) {}
 
-    public FirewallSelector(
+    public Selector(
             String initialProjectVersionDirectoryPath,
             String modifiedProjectVersionDirectoryPath,
             SelectionTechniqueEnum selectionTechnique
@@ -45,7 +45,7 @@ public class FirewallSelector {
         this.selectionTechnique = selectionTechnique;
     }
 
-    public FirewallSelector(
+    public Selector(
             String initialProjectVersionDirectoryPath,
             String modifiedProjectVersionDirectoryPath,
             SelectionTechniqueEnum selectionTechnique,
@@ -211,7 +211,7 @@ public class FirewallSelector {
     private void checkDependencyFinderHomePathRequirement() {
         if (OSGetter.isUnix() || OSGetter.isMac()){
             if (dependencyFinderHomePath == null) {
-                throw new NullPointerException("You need to instantiate FirewallSelector() " +
+                throw new NullPointerException("You need to instantiate Selector() " +
                         "with DependencyFinder's home absolute path");
             }
         }
@@ -308,7 +308,7 @@ public class FirewallSelector {
     private String getMainClassFolderPath() {
         File mainClassFile = null;
         try {
-            mainClassFile = new File(FirewallSelector.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+            mainClassFile = new File(Selector.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }

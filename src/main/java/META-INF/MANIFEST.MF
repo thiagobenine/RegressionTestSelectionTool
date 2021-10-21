@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: com.fst.FirewallSelector
+Main-Class: com.TestSelectorTool.Selector
 
