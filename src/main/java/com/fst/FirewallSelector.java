@@ -1,5 +1,6 @@
 package com.fst;
 import com.fst.utils.OSGetter;
+import com.fst.utils.SelectionTechniqueEnum;
 import com.fst.xmlfields.dependencies.*;
 import com.fst.xmlfields.differences.DifferencesField;
 import com.fst.xmlfields.differences.ModifiedClassField;
@@ -17,7 +18,7 @@ public class FirewallSelector {
     private String dependencyFinderHomePath = null;
     private final String initialProjectVersionDirectoryPath;
     private final String modifiedProjectVersionDirectoryPath;
-    private  final List<String> tempXMLOutputFilenames = Arrays.asList(
+    private final List<String> tempXMLOutputFilenames = Arrays.asList(
             "dependency_extractor_for_modified_version_tempfile.xml",
             "c2c_for_modified_version_tempfile.xml",
             "jarjardiff_tempfile.xml",
@@ -25,28 +26,32 @@ public class FirewallSelector {
             "c2c_for_initial_version_tempfile.xml"
     );
     private  ArrayList<String> tempXMLOutputPaths = new ArrayList<>();
-
+    private final SelectionTechniqueEnum selectionTechnique;
     private final Set<String> modifiedAndNewClassInbounds = new HashSet<>();
     private  DependenciesField modifiedVersionClassDependencies;
     private  DifferencesField classDifferences;
     private DependenciesField initialVersionTestsClassDependencies;
+    private final Set<String> selectedTestClasses = new HashSet<>();
 
     public  void main(String[] args) {}
 
     public FirewallSelector(
             String initialProjectVersionDirectoryPath,
-            String modifiedProjectVersionDirectoryPath
+            String modifiedProjectVersionDirectoryPath,
+            SelectionTechniqueEnum selectionTechnique
     ) {
         this.initialProjectVersionDirectoryPath = initialProjectVersionDirectoryPath;
         this.modifiedProjectVersionDirectoryPath = modifiedProjectVersionDirectoryPath;
+        this.selectionTechnique = selectionTechnique;
     }
 
     public FirewallSelector(
             String initialProjectVersionDirectoryPath,
             String modifiedProjectVersionDirectoryPath,
+            SelectionTechniqueEnum selectionTechnique,
             String dependencyFinderHomePath
     ) {
-        this(initialProjectVersionDirectoryPath, modifiedProjectVersionDirectoryPath);
+        this(initialProjectVersionDirectoryPath, modifiedProjectVersionDirectoryPath, selectionTechnique);
         this.dependencyFinderHomePath = dependencyFinderHomePath;
     }
 
@@ -58,45 +63,51 @@ public class FirewallSelector {
         setClassesDependenciesForModifiedVersion();
         setClassesDependenciesForTestsFromInitialVersion();
         setClassesDifferencesBetweenInitialAndModifiedVersion();
+
+        if (selectionTechnique.equals(SelectionTechniqueEnum.CLASS_FIREWALL)) {
+            setClassesInboundsFromDifferences(false);
+        }
+        else if (selectionTechnique.equals(SelectionTechniqueEnum.CHANGE_BASED)){
+            setClassesInboundsFromDifferences(true);
+        }
+
+        getSelectedTestCasesUsingClassesInbounds();
         deleteTempFiles();
 
-        setClassesInboundsFromDifferences();
-
-        List<String> selectedTestClasses = new ArrayList<>();
-        modifiedAndNewClassInbounds.forEach(modifiedAndNewClassInbound -> {
-                initialVersionTestsClassDependencies.packages.forEach(packageField -> {
-                    packageField.classes.forEach(classField -> {
-                        if (classField.name.equals(modifiedAndNewClassInbound))
-                            selectedTestClasses.add(modifiedAndNewClassInbound);
-                    });
-                });
-        });
-
-        return selectedTestClasses;
+        return selectedTestClasses.stream().toList();
     }
 
-    private void setClassesInboundsFromDifferences() {
-        getModifiedClassesInbounds();
-        getNewClassesInbounds();
+    private void getSelectedTestCasesUsingClassesInbounds() {
+        modifiedAndNewClassInbounds.forEach(modifiedAndNewClassInbound ->
+                initialVersionTestsClassDependencies.packages.forEach(packageField ->
+                        packageField.classes.forEach(classField -> {
+                            if (classField.name.equals(modifiedAndNewClassInbound))
+                                selectedTestClasses.add(modifiedAndNewClassInbound);
+                        })));
     }
 
-    private void getModifiedClassesInbounds() {
+    private void setClassesInboundsFromDifferences(boolean stopAtFirstLevel) {
+        getModifiedClassesInbounds(stopAtFirstLevel);
+        getNewClassesInbounds(stopAtFirstLevel);
+    }
+
+    private void getModifiedClassesInbounds(boolean stopAtFirstLevel) {
         if (classDifferences.modifiedClassesField != null && classDifferences.modifiedClassesField.classes != null) {
             classDifferences.modifiedClassesField.classes
                     .stream()
                     .map(modifiedClass -> modifiedClass.name)
                     .forEach(modifiedClassName -> {
                         modifiedAndNewClassInbounds.add(modifiedClassName);
-                        getClassInboundsForClass(modifiedClassName);
+                        getClassInboundsForClass(modifiedClassName, stopAtFirstLevel);
                     });
         }
     }
 
-    private void getNewClassesInbounds() {
+    private void getNewClassesInbounds(boolean stopAtFirstLevel) {
         if (classDifferences.newClassesField != null && classDifferences.newClassesField.names != null) {
             classDifferences.newClassesField.names.forEach(newClassName -> {
                 modifiedAndNewClassInbounds.add(newClassName);
-                getClassInboundsForClass(newClassName);
+                getClassInboundsForClass(newClassName, stopAtFirstLevel);
             });
         }
     }
@@ -172,7 +183,7 @@ public class FirewallSelector {
         classDifferences = (DifferencesField) xStream.fromXML(XMLFile);
     }
 
-    private void getClassInboundsForClass(String className) {
+    private void getClassInboundsForClass(String className, boolean stopAtFirstLevel) {
         modifiedVersionClassDependencies.packages
                 .stream()
                 .flatMap(packageField -> packageField.classes.stream())
@@ -189,7 +200,9 @@ public class FirewallSelector {
                                 return;
                             }
 
-                            getClassInboundsForClass(inboundField.text);
+                            if (!stopAtFirstLevel) {
+                                getClassInboundsForClass(inboundField.text, false);
+                            }
                         });
                     }
         });
@@ -225,14 +238,14 @@ public class FirewallSelector {
         xStream.processAnnotations(InboundField.class);
         xStream.processAnnotations(OutboundField.class);
 
-        var XMLFile = new File(tempXMLOutputPaths.get(1));
+        var XMLFile = new File(tempXMLOutputPaths.get(4));
 
         var initialVersionClassDependencies = (DependenciesField) xStream.fromXML(XMLFile);
 
         if (initialVersionClassDependencies.packages != null) {
-            initialVersionClassDependencies.packages.forEach(packageField -> {
-                packageField.classes.removeIf(classField -> !classField.name.endsWith("Test"));
-            });
+            initialVersionClassDependencies.packages.forEach(packageField ->
+                    packageField.classes.removeIf(classField -> !classField.name.endsWith("Test"))
+            );
         }
 
         initialVersionTestsClassDependencies = initialVersionClassDependencies;
