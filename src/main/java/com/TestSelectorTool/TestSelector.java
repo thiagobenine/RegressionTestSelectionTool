@@ -171,7 +171,7 @@ public class TestSelector {
         var xStream = new XStream();
         xStream.ignoreUnknownElements();
         xStream.allowTypesByWildcard(new String[] {
-                "com.fst.**",
+                "com.TestSelectorTool.**",
         });
         xStream.processAnnotations(DifferencesField.class);
         xStream.processAnnotations(ModifiedClassesField.class);
@@ -230,7 +230,7 @@ public class TestSelector {
         var xStream = new XStream();
         xStream.ignoreUnknownElements();
         xStream.allowTypesByWildcard(new String[] {
-                "com.fst.**",
+                "com.TestSelectorTool.**",
         });
         xStream.processAnnotations(DependenciesField.class);
         xStream.processAnnotations(PackageField.class);
@@ -273,7 +273,7 @@ public class TestSelector {
         var xStream = new XStream();
         xStream.ignoreUnknownElements();
         xStream.allowTypesByWildcard(new String[] {
-                "com.fst.**",
+                "com.TestSelectorTool.**",
         });
         xStream.processAnnotations(DependenciesField.class);
         xStream.processAnnotations(PackageField.class);
