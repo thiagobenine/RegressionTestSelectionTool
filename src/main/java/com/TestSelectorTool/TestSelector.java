@@ -14,7 +14,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.*;
 
-public class Selector {
+public class TestSelector {
     private String dependencyFinderHomePath = null;
     private final String initialProjectVersionDirectoryPath;
     private final String modifiedProjectVersionDirectoryPath;
@@ -35,7 +35,7 @@ public class Selector {
 
     public  void main(String[] args) {}
 
-    public Selector(
+    public TestSelector(
             String initialProjectVersionDirectoryPath,
             String modifiedProjectVersionDirectoryPath,
             SelectionTechniqueEnum selectionTechnique
@@ -45,7 +45,7 @@ public class Selector {
         this.selectionTechnique = selectionTechnique;
     }
 
-    public Selector(
+    public TestSelector(
             String initialProjectVersionDirectoryPath,
             String modifiedProjectVersionDirectoryPath,
             SelectionTechniqueEnum selectionTechnique,
@@ -211,7 +211,7 @@ public class Selector {
     private void checkDependencyFinderHomePathRequirement() {
         if (OSGetter.isUnix() || OSGetter.isMac()){
             if (dependencyFinderHomePath == null) {
-                throw new NullPointerException("You need to instantiate Selector() " +
+                throw new NullPointerException("You need to instantiate TestSelector() " +
                         "with DependencyFinder's home absolute path");
             }
         }
@@ -308,7 +308,7 @@ public class Selector {
     private String getMainClassFolderPath() {
         File mainClassFile = null;
         try {
-            mainClassFile = new File(Selector.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+            mainClassFile = new File(TestSelector.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }

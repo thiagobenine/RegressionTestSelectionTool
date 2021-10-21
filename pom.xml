@@ -29,7 +29,7 @@
                     <finalName>FST</finalName>
                     <archive>
                         <manifest>
-                            <mainClass>com.TestSelectorTool.Selector</mainClass>
+                            <mainClass>com.TestSelectorTool.TestSelector</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

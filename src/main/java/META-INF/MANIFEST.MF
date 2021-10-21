@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: com.TestSelectorTool.Selector
+Main-Class: com.TestSelectorTool.TestSelector
 
