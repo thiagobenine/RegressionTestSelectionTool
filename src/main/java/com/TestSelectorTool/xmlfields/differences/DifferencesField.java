@@ -9,4 +9,7 @@ public class DifferencesField {
 
     @XStreamAlias("new-classes")
     public NewClassesField newClassesField;
+
+    @XStreamAlias("new-packages")
+    public NewPackagesField newPackagesField;
 }

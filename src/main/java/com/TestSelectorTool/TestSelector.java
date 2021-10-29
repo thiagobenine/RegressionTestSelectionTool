@@ -1,4 +1,5 @@
 package com.TestSelectorTool;
+
 import com.TestSelectorTool.utils.OSGetter;
 import com.TestSelectorTool.utils.SelectionTechniqueEnum;
 import com.TestSelectorTool.xmlfields.dependencies.*;
@@ -6,13 +7,23 @@ import com.TestSelectorTool.xmlfields.differences.DifferencesField;
 import com.TestSelectorTool.xmlfields.differences.ModifiedClassField;
 import com.TestSelectorTool.xmlfields.differences.ModifiedClassesField;
 import com.TestSelectorTool.xmlfields.differences.NewClassesField;
+import com.google.common.collect.Lists;
+import com.strobel.decompiler.Decompiler;
+import com.strobel.decompiler.DecompilerSettings;
+import com.strobel.decompiler.PlainTextOutput;
 import com.thoughtworks.xstream.XStream;
 import jdk.jshell.spi.ExecutionControl.NotImplementedException;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class TestSelector {
     private String dependencyFinderHomePath = null;
@@ -32,6 +43,7 @@ public class TestSelector {
     private  DifferencesField classDifferences;
     private DependenciesField initialVersionTestsClassDependencies;
     private final Set<String> selectedTestClasses = new HashSet<>();
+    private final Set<String> newClassesFromNewPackages = new HashSet<>();
 
     public  void main(String[] args) {}
 
@@ -110,11 +122,74 @@ public class TestSelector {
                 getClassInboundsForClass(newClassName, stopAtFirstLevel);
             });
         }
+        if (!newClassesFromNewPackages.isEmpty()) {
+            newClassesFromNewPackages.forEach(newClassName -> {
+                modifiedAndNewClassInbounds.add(newClassName);
+                getClassInboundsForClass(newClassName, stopAtFirstLevel);
+            });
+        }
     }
 
     private void setClassesDifferencesBetweenInitialAndModifiedVersion() throws NotImplementedException {
         runJarJarDiff();
         getDifferencesFromXML(tempXMLOutputPaths.get(2));
+
+        analyzeClassFilesToGetNewClassesFromNewPackages();
+    }
+
+    private void analyzeClassFilesToGetNewClassesFromNewPackages() {
+        if (classDifferences.newPackagesField != null && classDifferences.newPackagesField.names != null) {
+            var newPackagesNames = new ArrayList<String>(classDifferences.newPackagesField.names);
+
+            try {
+                ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+
+                var paths = Files.walk(Paths.get(modifiedProjectVersionDirectoryPath))
+                        .filter(path -> path.toString().endsWith(".class"))
+                        .toList();
+
+                var numberOfPaths = paths.size();
+                var numberOfThreads = 8;
+
+                var chunkSize = numberOfPaths / (numberOfThreads - 1);
+
+                var subSetsPaths = Lists.partition(paths, chunkSize);
+                System.out.println("Number of Subsets of chunkSize " + chunkSize + ": " + subSetsPaths.size());
+                subSetsPaths
+                        .forEach(listOfPaths -> {
+                            executor.submit(() -> {
+                                listOfPaths.forEach(path -> {
+                                    System.out.println("Decompiling: " + path);
+                                    final DecompilerSettings settings = DecompilerSettings.javaDefaults();
+                                    var plainTextOutput = new PlainTextOutput();
+                                    Decompiler.decompile(
+                                            path.toString(),
+                                            plainTextOutput,
+                                            settings
+                                    );
+
+                                    var output = plainTextOutput.toString();
+                                    String newClassName = path.getFileName().toString().replace(".class", "");
+
+                                    for (String newPackageName : newPackagesNames) {
+                                        var packageName = "package " + newPackageName;
+
+                                        if (output.contains(packageName)) {
+                                            String newClassFullName = packageName + "." + newClassName;
+                                            newClassesFromNewPackages.add(newClassFullName);
+                                            break;
+                                        }
+                                    }
+                                });
+                                executor.shutdown();
+                                return null;
+                            });
+                        });
+                executor.awaitTermination(20, TimeUnit.MINUTES);
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void removeNotConfirmedClassDependenciesForModifiedVersion() {
@@ -196,8 +271,8 @@ public class TestSelector {
                             }
                             modifiedAndNewClassInbounds.add(inboundField.text);
 
-                            if (inboundField.text.endsWith("Test")) {
-                                return;
+                            if (inboundField.text.contains("Test")) {
+                                return;  // should not get dependencies for Tests Classes
                             }
 
                             if (!stopAtFirstLevel) {
@@ -244,7 +319,9 @@ public class TestSelector {
 
         if (initialVersionClassDependencies.packages != null) {
             initialVersionClassDependencies.packages.forEach(packageField ->
-                    packageField.classes.removeIf(classField -> !classField.name.endsWith("Test"))
+                    // get only Test Classes
+                    packageField.classes.removeIf(classField ->
+                            !classField.name.contains("Test"))
             );
         }
 
