@@ -91,9 +91,9 @@ public class TestSelector {
 
     private void getSelectedTestCasesUsingClassesInbounds() {
         modifiedAndNewClassInbounds.forEach(modifiedAndNewClassInbound ->
-                initialVersionTestsClassDependencies.packages.forEach(packageField ->
-                        packageField.classes.forEach(classField -> {
-                            if (classField.name.equals(modifiedAndNewClassInbound))
+                initialVersionTestsClassDependencies.packages.forEach(testPackageField ->
+                        testPackageField.classes.forEach(testClassField -> {
+                            if (testClassField.name.equals(modifiedAndNewClassInbound))
                                 selectedTestClasses.add(modifiedAndNewClassInbound);
                         })));
     }
