@@ -134,6 +134,7 @@ public class TestSelector {
         runJarJarDiff();
         getDifferencesFromXML(tempXMLOutputPaths.get(2));
 
+        removeTestsClassDifferences();
         analyzeClassFilesToGetNewClassesFromNewPackages();
     }
 
@@ -170,6 +171,9 @@ public class TestSelector {
 
                                     var output = plainTextOutput.toString();
                                     String newClassName = path.getFileName().toString().replace(".class", "");
+                                    if (newClassName.contains("Test")) {
+                                        return; // should not get classDifferences for test classes, so here we skip them
+                                    }
 
                                     for (String newPackageName : newPackagesNames) {
                                         var packageName = "package " + newPackageName;
@@ -189,6 +193,22 @@ public class TestSelector {
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void removeTestsClassDifferences() {
+        if (this.classDifferences != null) {
+            if (this.classDifferences.newClassesField != null) {
+                if (classDifferences.newClassesField.names != null) {
+                    classDifferences.newClassesField.names.removeIf(name -> name.contains("Test"));
+                }
+            }
+            if (this.classDifferences.modifiedClassesField != null) {
+                if (classDifferences.modifiedClassesField.classes != null) {
+                    classDifferences.modifiedClassesField.classes.removeIf(classField -> classField.name.contains("Test"));
+                }
+            }
+
         }
     }
 
