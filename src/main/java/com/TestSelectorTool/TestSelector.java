@@ -179,7 +179,7 @@ public class TestSelector {
                                         var packageName = "package " + newPackageName;
 
                                         if (output.contains(packageName)) {
-                                            String newClassFullName = packageName + "." + newClassName;
+                                            String newClassFullName = packageName.replace("package ", "") + "." + newClassName;
                                             newClassesFromNewPackages.add(newClassFullName);
                                             break;
                                         }
