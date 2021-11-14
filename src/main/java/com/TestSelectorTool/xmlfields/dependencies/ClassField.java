@@ -1,4 +1,4 @@
-package com.TestSelectorTool.xmlfields.dependencies;
+package com.RegressionTestSelectionTool.xmlfields.dependencies;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 import com.thoughtworks.xstream.annotations.XStreamAsAttribute;
 import com.thoughtworks.xstream.annotations.XStreamImplicit;

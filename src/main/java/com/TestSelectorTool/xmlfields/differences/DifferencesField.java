@@ -1,4 +1,4 @@
-package com.TestSelectorTool.xmlfields.differences;
+package com.RegressionTestSelectionTool.xmlfields.differences;
 import com.thoughtworks.xstream.annotations.XStreamAlias;
 
 @XStreamAlias("differences")

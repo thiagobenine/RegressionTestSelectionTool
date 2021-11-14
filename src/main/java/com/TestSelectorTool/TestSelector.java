@@ -1,12 +1,12 @@
-package com.TestSelectorTool;
+package com.RegressionTestSelectionTool;
 
-import com.TestSelectorTool.utils.OSGetter;
-import com.TestSelectorTool.utils.SelectionTechniqueEnum;
-import com.TestSelectorTool.xmlfields.dependencies.*;
-import com.TestSelectorTool.xmlfields.differences.DifferencesField;
-import com.TestSelectorTool.xmlfields.differences.ModifiedClassField;
-import com.TestSelectorTool.xmlfields.differences.ModifiedClassesField;
-import com.TestSelectorTool.xmlfields.differences.NewClassesField;
+import com.RegressionTestSelectionTool.utils.OSGetter;
+import com.RegressionTestSelectionTool.utils.SelectionTechniqueEnum;
+import com.RegressionTestSelectionTool.xmlfields.dependencies.*;
+import com.RegressionTestSelectionTool.xmlfields.differences.DifferencesField;
+import com.RegressionTestSelectionTool.xmlfields.differences.ModifiedClassField;
+import com.RegressionTestSelectionTool.xmlfields.differences.ModifiedClassesField;
+import com.RegressionTestSelectionTool.xmlfields.differences.NewClassesField;
 import com.google.common.collect.Lists;
 import com.strobel.decompiler.Decompiler;
 import com.strobel.decompiler.DecompilerSettings;
@@ -266,7 +266,7 @@ public class TestSelector {
         var xStream = new XStream();
         xStream.ignoreUnknownElements();
         xStream.allowTypesByWildcard(new String[] {
-                "com.TestSelectorTool.**",
+                "com.RegressionTestSelectionTool.**",
         });
         xStream.processAnnotations(DifferencesField.class);
         xStream.processAnnotations(ModifiedClassesField.class);
@@ -325,7 +325,7 @@ public class TestSelector {
         var xStream = new XStream();
         xStream.ignoreUnknownElements();
         xStream.allowTypesByWildcard(new String[] {
-                "com.TestSelectorTool.**",
+                "com.RegressionTestSelectionTool.**",
         });
         xStream.processAnnotations(DependenciesField.class);
         xStream.processAnnotations(PackageField.class);
@@ -370,7 +370,7 @@ public class TestSelector {
         var xStream = new XStream();
         xStream.ignoreUnknownElements();
         xStream.allowTypesByWildcard(new String[] {
-                "com.TestSelectorTool.**",
+                "com.RegressionTestSelectionTool.**",
         });
         xStream.processAnnotations(DependenciesField.class);
         xStream.processAnnotations(PackageField.class);
