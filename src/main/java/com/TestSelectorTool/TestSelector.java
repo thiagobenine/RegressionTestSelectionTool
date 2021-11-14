@@ -287,7 +287,7 @@ public class TestSelector {
                     if (classField.inbounds != null) {
                         classField.inbounds.forEach(inboundField -> {
                             if (modifiedAndNewClassInbounds.contains(inboundField.text)) {
-                                return;
+                                return; // should skip, class already analyzed
                             }
                             modifiedAndNewClassInbounds.add(inboundField.text);
 
