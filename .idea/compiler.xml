@@ -6,11 +6,11 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="TestSelectionTool" />
+        <module name="RegressionTestSelectionTool" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="TestSelectionTool" target="16" />
+      <module name="RegressionTestSelectionTool" target="16" />
     </bytecodeTargetLevel>
   </component>
 </project>
