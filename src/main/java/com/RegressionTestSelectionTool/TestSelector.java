@@ -69,13 +69,16 @@ public class TestSelector {
 
     public List<String> getSelectedClasses() throws NotImplementedException {
         checkDependencyFinderHomePathRequirement();
-
         setTempXMLOutputPaths();
 
+        // First Step
         setClassesDependenciesForModifiedVersion();
         setClassesDependenciesForTestsFromInitialVersion();
+
+        // Second Step
         setClassesDifferencesBetweenInitialAndModifiedVersion();
 
+        // Third Step
         if (selectionTechnique.equals(SelectionTechniqueEnum.CLASS_FIREWALL)) {
             setClassesInboundsFromDifferences(false);
         }
@@ -83,7 +86,9 @@ public class TestSelector {
             setClassesInboundsFromDifferences(true);
         }
 
+        // Fourth Step
         getSelectedTestCasesUsingClassesInbounds();
+        
         deleteTempFiles();
 
         return selectedTestClasses.stream().toList();
